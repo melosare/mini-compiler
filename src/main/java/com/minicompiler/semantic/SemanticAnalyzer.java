@@ -1,8 +1,11 @@
+
 package com.minicompiler.semantic;
+
 import com.minicompiler.ast.Expression;
 import com.minicompiler.ast.Program;
 import com.minicompiler.ast.Statement;
 import com.minicompiler.ast.Type;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -14,6 +17,8 @@ public class SemanticAnalyzer {
     private final Deque<Map<String, Type>> scopes = new ArrayDeque<>();
     private final Map<String, Program.MethodDeclaration> methods =
             new HashMap<>();
+
+    private Type currentReturnType;
 
     public void analyze(Program program) {
         scopes.clear();
@@ -38,13 +43,48 @@ public class SemanticAnalyzer {
         scopes.clear();
         beginScope();
 
+        currentReturnType = method.returnType();
+
         for (Program.Parameter parameter : method.parameters()) {
             declare(parameter.name(), parameter.type());
         }
 
         analyzeStatement(method.body());
 
+        if (currentReturnType != Type.VOID
+                && !guaranteesReturn(method.body())) {
+            throw new IllegalArgumentException(
+                    "Method '" + method.name()
+                            + "' must return a value."
+            );
+        }
+
         endScope();
+    }
+
+    private boolean guaranteesReturn(Statement statement) {
+
+        if (statement instanceof Statement.ReturnStatement) {
+            return true;
+        }
+
+        if (statement instanceof Statement.Block block) {
+            for (Statement child : block.statements()) {
+                if (guaranteesReturn(child)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (statement instanceof Statement.Conditional conditional) {
+            return conditional.elseBranch() != null
+                    && guaranteesReturn(conditional.thenBranch())
+                    && guaranteesReturn(conditional.elseBranch());
+        }
+
+        return false;
     }
 
     private void analyzeStatement(Statement statement) {
@@ -64,9 +104,8 @@ public class SemanticAnalyzer {
             declare(declaration.name(), declaration.type());
 
             if (declaration.initializer() != null) {
-                Type initializerType = analyzeExpression(
-                        declaration.initializer()
-                );
+                Type initializerType =
+                        analyzeExpression(declaration.initializer());
 
                 checkAssignmentType(
                         declaration.type(),
@@ -92,15 +131,37 @@ public class SemanticAnalyzer {
         }
 
         if (statement instanceof Statement.ReturnStatement returnStatement) {
-            if (returnStatement.value() != null) {
-                analyzeExpression(returnStatement.value());
+
+            if (currentReturnType == Type.VOID) {
+                if (returnStatement.value() != null) {
+                    throw new IllegalArgumentException(
+                            "Void methods cannot return a value."
+                    );
+                }
+
+                return;
             }
+
+            if (returnStatement.value() == null) {
+                throw new IllegalArgumentException(
+                        "Method returning " + currentReturnType
+                                + " must return a value."
+                );
+            }
+
+            Type valueType = analyzeExpression(returnStatement.value());
+
+            checkAssignmentType(
+                    currentReturnType,
+                    valueType,
+                    "return value"
+            );
 
             return;
         }
 
         if (statement instanceof Statement.Conditional conditional) {
-            analyzeExpression(conditional.condition());
+            validateCondition(conditional.condition());
             analyzeStatement(conditional.thenBranch());
 
             if (conditional.elseBranch() != null) {
@@ -111,7 +172,7 @@ public class SemanticAnalyzer {
         }
 
         if (statement instanceof Statement.WhileLoop loop) {
-            analyzeExpression(loop.condition());
+            validateCondition(loop.condition());
             analyzeStatement(loop.body());
             return;
         }
@@ -124,7 +185,7 @@ public class SemanticAnalyzer {
             }
 
             if (loop.condition() != null) {
-                analyzeExpression(loop.condition());
+                validateCondition(loop.condition());
             }
 
             if (loop.update() != null) {
@@ -179,6 +240,16 @@ public class SemanticAnalyzer {
                 "Unknown expression type: " + expression
         );
     }
+    private void validateCondition(Expression condition) {
+        Type conditionType = analyzeExpression(condition);
+
+        if (conditionType != Type.BOOLEAN) {
+            throw new IllegalArgumentException(
+                    "Condition must evaluate to BOOLEAN, but found "
+                            + conditionType
+            );
+        }
+    }
 
     private Type analyzeFunctionCall(Expression.FunctionCall call) {
         Program.MethodDeclaration method = methods.get(call.name());
@@ -223,7 +294,23 @@ public class SemanticAnalyzer {
         if (operator == Expression.Operator.GREATER_THAN
                 || operator == Expression.Operator.LESS_THAN
                 || operator == Expression.Operator.EQUAL) {
-            return Type.INT;
+
+            if (operator != Expression.Operator.EQUAL
+                    && (!isNumeric(leftType) || !isNumeric(rightType))) {
+                throw new IllegalArgumentException(
+                        "Comparison requires numeric operands."
+                );
+            }
+
+            if (operator == Expression.Operator.EQUAL
+                    && leftType != rightType
+                    && !(isNumeric(leftType) && isNumeric(rightType))) {
+                throw new IllegalArgumentException(
+                        "Cannot compare " + leftType + " with " + rightType
+                );
+            }
+
+            return Type.BOOLEAN;
         }
 
         if (leftType == Type.STRING || rightType == Type.STRING) {

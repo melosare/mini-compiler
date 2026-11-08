@@ -330,4 +330,291 @@ class SemanticAnalyzerTest {
                 () -> analyzer.analyze(program)
         );
     }
+
+    private Program createMethodProgram(
+            Type returnType,
+            Statement... statements
+    ) {
+        Program.MethodDeclaration method =
+                new Program.MethodDeclaration(
+                        "calculate",
+                        List.of(),
+                        returnType,
+                        new Statement.Block(List.of(statements))
+                );
+
+        Program.MethodDeclaration main =
+                new Program.MethodDeclaration(
+                        "MAIN",
+                        List.of(),
+                        Type.VOID,
+                        new Statement.Block(List.of())
+                );
+
+        return new Program(
+                "DJKhaled",
+                List.of(),
+                List.of(method),
+                main
+        );
+    }
+
+    @Test
+    void acceptsValidIntegerReturn() {
+        Program program = createMethodProgram(
+                Type.INT,
+                new Statement.ReturnStatement(
+                        new Expression.Literal("100", Type.INT)
+                )
+        );
+
+        assertDoesNotThrow(() -> analyzer.analyze(program));
+    }
+
+    @Test
+    void acceptsIntegerReturnFromDoubleMethod() {
+        Program program = createMethodProgram(
+                Type.DOUBLE,
+                new Statement.ReturnStatement(
+                        new Expression.Literal("100", Type.INT)
+                )
+        );
+
+        assertDoesNotThrow(() -> analyzer.analyze(program));
+    }
+
+    @Test
+    void acceptsValidDoubleReturn() {
+        Program program = createMethodProgram(
+                Type.DOUBLE,
+                new Statement.ReturnStatement(
+                        new Expression.Literal("10.5", Type.DOUBLE)
+                )
+        );
+
+        assertDoesNotThrow(() -> analyzer.analyze(program));
+    }
+
+    @Test
+    void acceptsValidStringReturn() {
+        Program program = createMethodProgram(
+                Type.STRING,
+                new Statement.ReturnStatement(
+                        new Expression.Literal("\"Major\"", Type.STRING)
+                )
+        );
+
+        assertDoesNotThrow(() -> analyzer.analyze(program));
+    }
+
+    @Test
+    void rejectsIncorrectReturnType() {
+        Program program = createMethodProgram(
+                Type.INT,
+                new Statement.ReturnStatement(
+                        new Expression.Literal("\"Major\"", Type.STRING)
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> analyzer.analyze(program)
+        );
+    }
+
+    @Test
+    void rejectsReturnValueFromVoidMethod() {
+        Program program = createMethodProgram(
+                Type.VOID,
+                new Statement.ReturnStatement(
+                        new Expression.Literal("100", Type.INT)
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> analyzer.analyze(program)
+        );
+    }
+
+    @Test
+    void rejectsMissingReturnStatement() {
+        Program program = createMethodProgram(
+                Type.INT,
+                new Statement.VariableDeclaration(
+                        Type.INT,
+                        "wins",
+                        new Expression.Literal("100", Type.INT)
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> analyzer.analyze(program)
+        );
+    }
+
+    @Test
+    void rejectsReturnWithoutValueFromNonVoidMethod() {
+        Program program = createMethodProgram(
+                Type.INT,
+                new Statement.ReturnStatement(null)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> analyzer.analyze(program)
+        );
+    }
+
+    @Test
+    void acceptsVoidMethodWithoutReturnStatement() {
+        Program program = createMethodProgram(Type.VOID);
+
+        assertDoesNotThrow(() -> analyzer.analyze(program));
+    }
+
+    @Test
+    void rejectsReturnInsideLoopAsOnlyReturn() {
+        Program program = createMethodProgram(
+                Type.INT,
+                new Statement.WhileLoop(
+                        new Expression.Literal("1", Type.INT),
+                        new Statement.Block(List.of(
+                                new Statement.ReturnStatement(
+                                        new Expression.Literal("100", Type.INT)
+                                )
+                        ))
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> analyzer.analyze(program)
+        );
+    }
+    @Test
+    void acceptsValidWhileCondition() {
+        Program program = createProgram(List.of(
+                new Statement.VariableDeclaration(
+                        Type.INT,
+                        "wins",
+                        new Expression.Literal("10", Type.INT)
+                ),
+                new Statement.WhileLoop(
+                        new Expression.Binary(
+                                new Expression.Variable("wins"),
+                                Expression.Operator.LESS_THAN,
+                                new Expression.Literal("20", Type.INT)
+                        ),
+                        new Statement.Block(List.of())
+                )
+        ));
+
+        assertDoesNotThrow(() -> analyzer.analyze(program));
+    }
+
+    @Test
+    void rejectsNonBooleanWhileCondition() {
+        Program program = createProgram(List.of(
+                new Statement.WhileLoop(
+                        new Expression.Literal("10", Type.INT),
+                        new Statement.Block(List.of())
+                )
+        ));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> analyzer.analyze(program)
+        );
+    }
+
+    @Test
+    void acceptsValidConditionalCondition() {
+        Program program = createProgram(List.of(
+                new Statement.VariableDeclaration(
+                        Type.INT,
+                        "wins",
+                        new Expression.Literal("10", Type.INT)
+                ),
+                new Statement.Conditional(
+                        new Expression.Binary(
+                                new Expression.Variable("wins"),
+                                Expression.Operator.GREATER_THAN,
+                                new Expression.Literal("5", Type.INT)
+                        ),
+                        new Statement.Block(List.of()),
+                        null
+                )
+        ));
+
+        assertDoesNotThrow(() -> analyzer.analyze(program));
+    }
+
+    @Test
+    void rejectsNonBooleanConditionalCondition() {
+        Program program = createProgram(List.of(
+                new Statement.Conditional(
+                        new Expression.Literal("10", Type.INT),
+                        new Statement.Block(List.of()),
+                        null
+                )
+        ));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> analyzer.analyze(program)
+        );
+    }
+
+    @Test
+    void acceptsValidForLoopCondition() {
+        Program program = createProgram(List.of(
+                new Statement.ForLoop(
+                        new Statement.VariableDeclaration(
+                                Type.INT,
+                                "i",
+                                new Expression.Literal("0", Type.INT)
+                        ),
+                        new Expression.Binary(
+                                new Expression.Variable("i"),
+                                Expression.Operator.LESS_THAN,
+                                new Expression.Literal("10", Type.INT)
+                        ),
+                        new Statement.Assignment(
+                                "i",
+                                new Expression.Binary(
+                                        new Expression.Variable("i"),
+                                        Expression.Operator.PLUS,
+                                        new Expression.Literal("1", Type.INT)
+                                )
+                        ),
+                        new Statement.Block(List.of())
+                )
+        ));
+
+        assertDoesNotThrow(() -> analyzer.analyze(program));
+    }
+
+    @Test
+    void rejectsNonBooleanForLoopCondition() {
+        Program program = createProgram(List.of(
+                new Statement.ForLoop(
+                        new Statement.VariableDeclaration(
+                                Type.INT,
+                                "i",
+                                new Expression.Literal("0", Type.INT)
+                        ),
+                        new Expression.Literal("10", Type.INT),
+                        null,
+                        new Statement.Block(List.of())
+                )
+        ));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> analyzer.analyze(program)
+        );
+    }
+
 }
