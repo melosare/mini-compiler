@@ -181,4 +181,153 @@ class SemanticAnalyzerTest {
                 () -> analyzer.analyze(program)
         );
     }
+    @Test
+    void acceptsValidMethodCall() {
+        Program.MethodDeclaration method =
+                new Program.MethodDeclaration(
+                        "calculate",
+                        List.of(
+                                new Program.Parameter("value", Type.INT)
+                        ),
+                        Type.INT,
+                        new Statement.Block(List.of(
+                                new Statement.ReturnStatement(
+                                        new Expression.Variable("value")
+                                )
+                        ))
+                );
+
+        Program.MethodDeclaration main =
+                new Program.MethodDeclaration(
+                        "MAIN",
+                        List.of(),
+                        Type.VOID,
+                        new Statement.Block(List.of(
+                                new Statement.VariableDeclaration(
+                                        Type.INT,
+                                        "result",
+                                        new Expression.FunctionCall(
+                                                "calculate",
+                                                List.of(
+                                                        new Expression.Literal(
+                                                                "10",
+                                                                Type.INT
+                                                        )
+                                                )
+                                        )
+                                )
+                        ))
+                );
+
+        Program program = new Program(
+                "DJKhaled",
+                List.of(),
+                List.of(method),
+                main
+        );
+
+        assertDoesNotThrow(() -> analyzer.analyze(program));
+    }
+
+    @Test
+    void rejectsUndeclaredMethodCall() {
+        Program program = createProgram(List.of(
+                new Statement.ExpressionStatement(
+                        new Expression.FunctionCall(
+                                "missing",
+                                List.of()
+                        )
+                )
+        ));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> analyzer.analyze(program)
+        );
+    }
+
+    @Test
+    void rejectsIncorrectArgumentCount() {
+        Program.MethodDeclaration method =
+                new Program.MethodDeclaration(
+                        "calculate",
+                        List.of(
+                                new Program.Parameter("value", Type.INT)
+                        ),
+                        Type.INT,
+                        new Statement.Block(List.of())
+                );
+
+        Program.MethodDeclaration main =
+                new Program.MethodDeclaration(
+                        "MAIN",
+                        List.of(),
+                        Type.VOID,
+                        new Statement.Block(List.of(
+                                new Statement.ExpressionStatement(
+                                        new Expression.FunctionCall(
+                                                "calculate",
+                                                List.of()
+                                        )
+                                )
+                        ))
+                );
+
+        Program program = new Program(
+                "DJKhaled",
+                List.of(),
+                List.of(method),
+                main
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> analyzer.analyze(program)
+        );
+    }
+
+    @Test
+    void rejectsIncorrectArgumentType() {
+        Program.MethodDeclaration method =
+                new Program.MethodDeclaration(
+                        "calculate",
+                        List.of(
+                                new Program.Parameter("value", Type.INT)
+                        ),
+                        Type.INT,
+                        new Statement.Block(List.of())
+                );
+
+        Program.MethodDeclaration main =
+                new Program.MethodDeclaration(
+                        "MAIN",
+                        List.of(),
+                        Type.VOID,
+                        new Statement.Block(List.of(
+                                new Statement.ExpressionStatement(
+                                        new Expression.FunctionCall(
+                                                "calculate",
+                                                List.of(
+                                                        new Expression.Literal(
+                                                                "hello",
+                                                                Type.STRING
+                                                        )
+                                                )
+                                        )
+                                )
+                        ))
+                );
+
+        Program program = new Program(
+                "DJKhaled",
+                List.of(),
+                List.of(method),
+                main
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> analyzer.analyze(program)
+        );
+    }
 }

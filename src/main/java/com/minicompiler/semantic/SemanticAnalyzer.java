@@ -6,14 +6,26 @@ import com.minicompiler.ast.Type;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SemanticAnalyzer {
 
     private final Deque<Map<String, Type>> scopes = new ArrayDeque<>();
+    private final Map<String, Program.MethodDeclaration> methods =
+            new HashMap<>();
 
     public void analyze(Program program) {
         scopes.clear();
+        methods.clear();
+
+        for (Program.MethodDeclaration method : program.methods()) {
+            if (methods.putIfAbsent(method.name(), method) != null) {
+                throw new IllegalArgumentException(
+                        "Method '" + method.name() + "' is already declared."
+                );
+            }
+        }
 
         for (Program.MethodDeclaration method : program.methods()) {
             analyzeMethod(method);
@@ -68,7 +80,6 @@ public class SemanticAnalyzer {
 
         if (statement instanceof Statement.Assignment assignment) {
             Type variableType = lookup(assignment.name());
-
             Type valueType = analyzeExpression(assignment.value());
 
             checkAssignmentType(
@@ -161,16 +172,46 @@ public class SemanticAnalyzer {
         }
 
         if (expression instanceof Expression.FunctionCall functionCall) {
-            for (Expression argument : functionCall.arguments()) {
-                analyzeExpression(argument);
-            }
-
-            return Type.VOID;
+            return analyzeFunctionCall(functionCall);
         }
 
         throw new IllegalArgumentException(
                 "Unknown expression type: " + expression
         );
+    }
+
+    private Type analyzeFunctionCall(Expression.FunctionCall call) {
+        Program.MethodDeclaration method = methods.get(call.name());
+
+        if (method == null) {
+            throw new IllegalArgumentException(
+                    "Method '" + call.name() + "' is not declared."
+            );
+        }
+
+        List<Program.Parameter> parameters = method.parameters();
+        List<Expression> arguments = call.arguments();
+
+        if (parameters.size() != arguments.size()) {
+            throw new IllegalArgumentException(
+                    "Method '" + call.name()
+                            + "' expects " + parameters.size()
+                            + " arguments but received " + arguments.size() + "."
+            );
+        }
+
+        for (int i = 0; i < parameters.size(); i++) {
+            Type argumentType = analyzeExpression(arguments.get(i));
+            Type parameterType = parameters.get(i).type();
+
+            checkAssignmentType(
+                    parameterType,
+                    argumentType,
+                    parameters.get(i).name()
+            );
+        }
+
+        return method.returnType();
     }
 
     private Type analyzeBinaryExpression(
@@ -182,7 +223,6 @@ public class SemanticAnalyzer {
         if (operator == Expression.Operator.GREATER_THAN
                 || operator == Expression.Operator.LESS_THAN
                 || operator == Expression.Operator.EQUAL) {
-
             return Type.INT;
         }
 
