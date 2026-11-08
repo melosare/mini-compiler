@@ -1,0 +1,142 @@
+
+(* mini-compiler: Version 1 EBNF Grammar *)
+
+program =
+    programDeclaration,
+    { importDeclaration },
+    { methodDeclaration },
+    mainDeclaration ;
+
+programDeclaration =
+    "LETMEINSPIREYOU", identifier, ";" ;
+
+importDeclaration =
+    "HINGES", identifierList, ";" ;
+
+methodDeclaration =
+    "MAJORKEY", identifier,
+    "WESTSIDE", [ formalParameters ], "EASTSIDE",
+    "COLON", type, block ;
+
+mainDeclaration =
+    "MAJORKEY", "MAIN",
+    "WESTSIDE", "EASTSIDE",
+    "COLON", "SCRUB", block ;
+
+formalParameters =
+    "WEONTHAT", formalParameter,
+    { "MO", formalParameter } ;
+
+formalParameter =
+    identifier, "COLON", type ;
+
+type =
+      "BASICB"
+    | "HUNDRED"
+    | "WORDUP"
+    | "SCRUB" ;
+
+block =
+    "LEGGO", { statement }, "WEOUT" ;
+
+statement =
+      variableDeclaration
+    | assignment
+    | returnStatement
+    | conditionalStatement
+    | whileLoop
+    | forLoop
+    | printStatement
+    | functionCall
+    | block ;
+
+variableDeclaration =
+    type, identifier,
+    [ "GIMMEDAT", expression ], ";" ;
+
+assignment =
+    identifier, "GIMMEDAT", expression, ";" ;
+
+returnStatement =
+    "WEDABEST", [ expression ], ";" ;
+
+conditionalStatement =
+    "BLESS", "COLON", booleanExpression,
+    "UP", "COLON", statement,
+    [ "THEYDONTWANTYOUTOSUCCEED", "COLON", statement ] ;
+
+whileLoop =
+    "ANOTHERONE", "COLON", booleanExpression, block ;
+
+forLoop =
+    "WEGOALLDAY", "WESTSIDE",
+    forInitializer, "MO",
+    booleanExpression, "MO",
+    forUpdate,
+    "EASTSIDE", block ;
+
+forInitializer =
+      type, identifier, "GIMMEDAT", expression
+    | identifier, "GIMMEDAT", expression ;
+
+forUpdate =
+      identifier, "GIMMEDAT", expression
+    | expression ;
+
+printStatement =
+    "THEKEYIS",
+    ( "PRINT" | "PRINTLN" ),
+    "WESTSIDE", [ argumentList ], "EASTSIDE", ";" ;
+
+functionCall =
+    "THEKEYIS", identifier,
+    "WESTSIDE", [ argumentList ], "EASTSIDE", ";" ;
+
+argumentList =
+    expression, { "MO", expression } ;
+
+booleanExpression =
+    expression, comparisonOperator, expression ;
+
+comparisonOperator =
+      "STEPIN"
+    | "SONIN"
+    | "PEEPS" ;
+
+expression =
+    additiveExpression ;
+
+additiveExpression =
+    multiplicativeExpression,
+    { ("PLUS" | "MINUS"), multiplicativeExpression } ;
+
+multiplicativeExpression =
+    primaryExpression,
+    { ("STACKS" | "SPLIT"), primaryExpression } ;
+
+primaryExpression =
+      identifier
+    | number
+    | string
+    | "WESTSIDE", expression, "EASTSIDE"
+    | functionCall ;
+
+identifierList =
+    identifier, { "MO", identifier } ;
+
+identifier =
+    letter, { letter | digit | "_" } ;
+
+number =
+    digit, { digit }, [ ".", digit, { digit } ] ;
+
+string =
+    '"', { stringCharacter }, '"' ;
+
+letter =
+    "A" | "B" | ... | "Z"
+    | "a" | "b" | ... | "z" ;
+
+digit =
+    "0" | "1" | "2" | "3" | "4"
+    | "5" | "6" | "7" | "8" | "9" ;
