@@ -125,6 +125,20 @@ public class Lexer {
             case "PRINT" -> TokenType.PRINT;
             case "PRINTLN" -> TokenType.PRINTLN;
 
+            case "PLUS" -> TokenType.PLUS;
+            case "MINUS" -> TokenType.MINUS;
+            case "STACKS" -> TokenType.STACKS;
+            case "SPLIT" -> TokenType.SPLIT;
+            case "STEPIN" -> TokenType.STEPIN;
+            case "SONIN" -> TokenType.SONIN;
+            case "PEEPS" -> TokenType.PEEPS;
+
+            case "WESTSIDE" -> TokenType.WESTSIDE;
+            case "EASTSIDE" -> TokenType.EASTSIDE;
+            case "MO" -> TokenType.MO;
+            case "COLON" -> TokenType.COLON;
+            case "SEMIC" -> TokenType.SEMIC;
+
             default -> TokenType.IDENTIFIER;
         };
     }
