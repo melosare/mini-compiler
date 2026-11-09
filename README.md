@@ -145,6 +145,10 @@ Source Code (.khal)
     JVM Execution
 ```
 
+## Future State
+
+Integration tests to be implemented
+
 ## Author
 
 Developed as a personal compiler development project.
