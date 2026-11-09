@@ -31,7 +31,7 @@ class JavaCodeGeneratorTest {
     void generatesBasicJavaProgram() {
         Program program = createProgram(List.of());
 
-        String result = generator.generate(program);
+        String result = generator.generate(program, "DJKhaled");
 
         assertTrue(result.contains("public class DJKhaled"));
         assertTrue(result.contains("public static void main(String[] args)"));
@@ -47,7 +47,7 @@ class JavaCodeGeneratorTest {
                 )
         ));
 
-        String result = generator.generate(program);
+        String result = generator.generate(program, "DJKhaled");
 
         assertTrue(result.contains("int wins = 100;"));
     }
@@ -66,7 +66,7 @@ class JavaCodeGeneratorTest {
                 )
         ));
 
-        String result = generator.generate(program);
+        String result = generator.generate(program, "DJKhaled");
 
         assertTrue(result.contains("wins = 200;"));
     }
@@ -91,7 +91,7 @@ class JavaCodeGeneratorTest {
                 )
         ));
 
-        String result = generator.generate(program);
+        String result = generator.generate(program, "DJKhaled");
 
         assertTrue(result.contains("(10 + (5 * 2))"));
     }
@@ -110,7 +110,7 @@ class JavaCodeGeneratorTest {
                 )
         ));
 
-        String result = generator.generate(program);
+        String result = generator.generate(program, "DJKhaled");
 
         assertTrue(result.contains(
                 "System.out.println(\"Hello World\");"
@@ -141,7 +141,7 @@ class JavaCodeGeneratorTest {
                 )
         ));
 
-        String result = generator.generate(program);
+        String result = generator.generate(program, "DJKhaled");
 
         assertTrue(result.contains("if ((10 > 5))"));
         assertTrue(result.contains("System.out.println(\"Success\");"));
@@ -169,7 +169,7 @@ class JavaCodeGeneratorTest {
                 )
         ));
 
-        String result = generator.generate(program);
+        String result = generator.generate(program, "DJKhaled");
 
         assertTrue(result.contains("while ((wins < 10))"));
         assertTrue(result.contains("wins = (wins + 1);"));
@@ -190,7 +190,7 @@ class JavaCodeGeneratorTest {
                 )
         ));
 
-        String result = generator.generate(program);
+        String result = generator.generate(program, "DJKhaled");
 
         assertTrue(result.contains("String name = \"Major\";"));
         assertTrue(result.contains("double money = 10.5;"));

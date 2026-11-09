@@ -11,12 +11,13 @@ public class JavaCodeGenerator {
     private final StringBuilder output = new StringBuilder();
     private int indentation = 0;
 
-    public String generate(Program program) {
+    public String generate(Program program, String className) {
+
         output.setLength(0);
         indentation = 0;
 
         output.append("public class ")
-                .append(program.name())
+                .append(className)
                 .append(" {\n");
 
         indentation++;
